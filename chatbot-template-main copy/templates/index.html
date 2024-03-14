@@ -30,6 +30,8 @@
             .homeMainWrapOut{opacity: 0;}
             .homeBannerSlider .slick-slide:first-child .bannerQuote{display: none;}
         </style>
+
+        
     </head>
 
 
@@ -2368,7 +2370,7 @@ $(window).on('load',function () {
     <div id="body">
         <div id="chat-circle" class="btn btn-raised">
             <div id="chat-overlay"></div>
-            <i class="material-icons">speaker_phone</i>
+
         </div>
 
         <div class="chat-box">
@@ -2382,8 +2384,13 @@ $(window).on('load',function () {
                 <!--chat-log -->
             </div>
             <div class="chat-input">
-                <form>
+                <form id="chat-form">
                     <input type="text" id="chat-input" placeholder="Send a message...">
+                    <!-- Input for uploading a photo -->
+                    <input type="file" id="photo-upload" accept="image/*" style="display: none;">
+                    <label for="photo-upload" class="photo-upload-label">
+                        <i class="material-icons">camera_alt</i>
+                    </label>
                     <button type="submit" class="chat-submit" id="chat-submit">
                         <i class="material-icons">send</i>
                     </button>
@@ -2392,8 +2399,34 @@ $(window).on('load',function () {
         </div>
     </div>
 
-    <script>
-      $(document).ready(function() {
+     <!-- jQuery Library -->
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+     <script>
+        $(document).ready(function() {
+    // Click event for uploading photo
+    $('#photo-upload').change(function() {
+        var file = this.files[0];
+        if (file) {
+            var formData = new FormData();
+            formData.append('photo', file);
+            $.ajax({
+                type: 'POST',
+                url: '/send_photo',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    generate_message('Photo sent', 'self');
+                    generate_message(response.message, 'user');
+                },
+                error: function(err) {
+                    console.error('Error:', err);
+                }
+            });
+        }
+    });
+
+    // Click event for sending message
     $("#chat-submit").click(function(e) {
         e.preventDefault();
         var msg = $("#chat-input").val().trim();
@@ -2440,6 +2473,6 @@ $(window).on('load',function () {
     }
 });
 
-    </script>
+     </script>
 </body>
 </html>
