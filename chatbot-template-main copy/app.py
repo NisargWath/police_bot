@@ -4,6 +4,14 @@ from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from werkzeug.utils import secure_filename
 import os
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import certifi
+
+context = ssl.create_default_context(cafile=certifi.where())
+
 app = Flask(__name__)
 
 
@@ -14,7 +22,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-GOOGLE_API_KEY = "put you api"
+GOOGLE_API_KEY = "AIzaSyDPAtGf-Rwe5nUQ_uDCiifRGVQxND5cB_c"
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel(model_name="gemini-pro")
 llm = ChatGoogleGenerativeAI(model="gemini-pro-vision",google_api_key=GOOGLE_API_KEY)
@@ -39,6 +47,36 @@ def send_message():
 
 
 
+
+
+# Function to send email
+def send_email(receiver_email, subject, body):
+    sender_email = "nisargwath7@gmail.com"  # Your email
+    password = "Nisargwath@211"  # Your email password
+
+ # Create message container
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+
+    # Attach body to the email
+    msg.attach(MIMEText(body, 'plain'))
+    
+
+    try:
+        # Create a secure SSL context
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        context.check_hostname = False
+
+        # Connect to the SMTP server
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+            print("Email sent successfully!")
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
 
 
 @app.route('/send_photo', methods=['POST'])
@@ -67,10 +105,16 @@ def send_photo():
     )
   
     result = llm.invoke([message])
-    print(result.content)
-    # result_dict = result[0].as_dict() if result else {}  # Convert to dictionary
-    return jsonify({"message": f"This Ai generated report is being submite to near by police station  {result.content}"})
+    report_content = result.content if result else "No report generated."
+
+    # Send email to nearby police station
+    receiver_email = "2117025@gpnagpur.ac.in"  # Change to the email of the nearby police station
+    subject = "AI Generated Report from Image Description"
+    body = f"This AI generated report is being submitted to the nearby police station.\n\nReport Content:\n{report_content}"
     
+    send_email(receiver_email, subject, body)
+
+    return jsonify({"message": f"This AI generated report is being submitted to the nearby police station:\n{report_content}"})
 
 
 
